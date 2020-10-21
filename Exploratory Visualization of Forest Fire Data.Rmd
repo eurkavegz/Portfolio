@@ -1,0 +1,159 @@
+---
+title: '[R] Exploratory Visualization of Forest Fire Data'
+author: "Erica V"
+date: "19/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+#Load the data and packages required
+library(stats)
+library(tidyverse)
+
+forestfires <- read.csv("forestfires.csv")
+colnames(forestfires)
+```
+
+## Introduction
+The data is associated with a [scientific research paper](http://www3.dsi.uminho.pt/pcortez/fires.pdf) on predicting the occurencce of forest fires in Portugal using modeling techniques.
+
+We know that the columns correspond to the following information:
+
+* **X**: X-axis spatial coordinate within the Montesinho park map: 1 to 9 
+* **Y**: Y-axis spatial coordinate within the Montesinho park map: 2 to 9 
+* **month**: Month of the year: 'jan' to 'dec' 
+* **day**: Day of the week: 'mon' to 'sun' 
+* **FFMC**: Fine Fuel Moisture Code index from the FWI system: 18.7 to 96.20 
+* **DMC**: Duff Moisture Code index from the FWI system: 1.1 to 291.3 
+* **DC**: Drought Code index from the FWI system: 7.9 to 860.6 
+* **ISI**: Initial Spread Index from the FWI system: 0.0 to 56.10 
+* **temp**: Temperature in Celsius degrees: 2.2 to 33.30 
+* **RH**: Relative humidity in percentage: 15.0 to 100 
+* **wind**: Wind speed in km/h: 0.40 to 9.40 
+* **rain**: Outside rain in mm/m2 : 0.0 to 6.4 
+* **area**: The burned area of the forest (in ha): 0.00 to 1090.84 
+
+A single row corresponds to the location of a fire and some characteristics about the fire itself. Higher water presence is typically associated with less fire spread, so we might expect the water-related variables (`DMC` and `rain`) to be related with `area`.
+
+## Data Processing
+
+```{r}
+forestfires %>% pull(month) %>% unique
+forestfires %>% pull(day) %>% unique
+
+# organize the month and day of the year in order
+month_order <- c("jan", "feb", "mar",
+                 "apr", "may", "jun", 
+                 "jul", "aug", "sep", 
+                 "oct", "nov", "dec")
+
+day_order <- c("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+
+forestfires <- forestfires %>%
+  mutate(
+    month = factor(month, levels = month_order),
+    day = factor(day, levels = day_order)
+  )
+```
+
+```{r}
+# When do forest fires happen the most?
+
+fires_month <- forestfires %>%
+  group_by(month) %>%
+  summarize(total_fires = n())
+
+fires_month %>%
+  ggplot(aes(x=month, y=total_fires)) +
+  geom_col() +
+  labs(
+    title = "Number of Forest Fires by Month",
+    y = "Fire Count",
+    x = "Month"
+  )+
+  theme(
+    panel.background = element_rect(fill = "white")
+  )
+```
+
+We see a spike in forest fires in the months of August and September and other smaller spike in March.
+
+```{r}
+# Does day of the week play a role?
+fires_day <- forestfires %>%
+  group_by(day) %>%
+  summarize(total_fires_day = n())
+
+fires_day %>%
+  ggplot(aes(x=day, y=total_fires_day)) +
+  geom_col() +
+  labs(
+    title = "Number of Forest Fires by Day",
+    y = "Fire Count",
+    x = "Day of the Week"
+  ) +
+  theme(
+    panel.background = element_rect(fill = "white")
+  )
+```
+There seems to be an increase in forest fires on the weekend.
+
+Let's investigate all other variables and see if any correlate with the same inclrease.
+
+```{r}
+# Plot all variables against time
+forestfires_long <- forestfires %>%
+  pivot_longer(
+    cols = c("FFMC", "DMC", "DC", 
+             "ISI", "temp", "RH", 
+             "wind", "rain"),
+    names_to = "column",
+    values_to = "value"
+  )
+
+forestfires_long %>%
+  ggplot(aes(x=month, y=value)) +
+  geom_boxplot() +
+  facet_wrap(vars(column), scale="free_y") +
+  labs(
+    title = "Variable changes over month",
+    x = "Month",
+    y = "Variable Value"
+  )
+```
+
+From the plots we can see DC, DMC and temp also increase during August and September
+
+Do these variables affect the forest fire area?
+
+```{r}
+forestfires_long %>%
+  ggplot(aes(x=value, y=area)) +
+  geom_point() +
+  facet_wrap(vars(column), scale="free_x") +
+  labs(
+    title = "Relationship between other variables and area burned",
+    x = "Value of Column",
+    y = "Area Burned (hectare)"
+    )
+```
+
+```{r}
+# Remove outliers from data above to inspect better
+
+forestfires_long %>% 
+  filter(area < 300) %>% 
+  ggplot(aes(x = value, y = area)) +
+  geom_point() +
+  facet_wrap(vars(column), scales = "free_x") +
+  labs(
+    title = "Relationships between other variables and area burned (area < 300)",
+    x = "Value of column",
+    y = "Area burned (hectare)"
+  )
+```
+
+It appears that forest fire area covereage does not affect the severity of the forest fire.
