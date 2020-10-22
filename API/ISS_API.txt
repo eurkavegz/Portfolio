@@ -1,0 +1,24 @@
+# Set up the parameters we want to pass to the API.
+# This is the latitude and longitude of New York City.
+parameters = {"lat": 40.71, "lon": -74}
+
+# Make a get request with the parameters.
+response = requests.get("http://api.open-notify.org/iss-pass.json", params=parameters)
+
+# Print the content of the response (the data the server returned)
+print(response.content)
+
+# Get the response data as a Python object.  Verify that it's a dictionary.
+json_data = response.json()
+print(type(json_data))
+print(json_data)
+
+first_pass_duration = json_data["response"][0]["duration"]
+
+print(response.headers) #metadata with information on how it genereated the data
+content_type = response.headers["content-type"] #tells us the format of the response and how to decode it
+
+# How many people are currently in space?
+response = requests.get("http://api.open-notify.org/astros.json")
+json_data = response.json()
+in_space_count = json_data['number']

@@ -1,0 +1,51 @@
+# Access data with authorization key
+headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+
+# Define parameters to only extract data from the past day
+params = {"t":"day"}
+
+# Load data in
+response = requests.get("https://oauth.reddit.com/r/python/top", headers=headers, params=params)
+
+# Convert the json string data into useable python dictonaries
+python_top = response.json()
+
+# Extract the list contianing all the posts
+python_top_articles = python_top["data"]["children"]
+
+# Find the post with the most upvotes
+most_upvoted = ""
+most_upvotes = 0
+for article in python_top_articles:
+    ar = article["data"]
+    if ar["ups"] >= most_upvotes:
+        most_upvoted = ar["id"]
+        most_upvotes = ar["ups"]
+
+# Retreive all the comments on the top post - ID for the top post: 4b7w9u
+headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+response = requests.get("https://oauth.reddit.com/r/python/comments/4b7w9u", headers=headers)
+
+comments = response.json()
+
+# The first item in the list contains information about the post, and the second item contains information about the comments.
+# This means that comments have one more key than posts do.
+
+# Find the most upvoted top-level comment (ignoring nested replies)
+comments_list = comments[1]["data"]["children"]
+
+most_upvoted_comment = ""
+most_upvotes_comment = 0
+for comment in comments_list:
+    co = comment["data"]
+    if co["ups"] >= most_upvotes_comment:
+        most_upvoted_comment = co["id"]
+        most_upvotes_comment = co["ups"]
+
+# Results in id: d16y4ry
+
+# Give another upvote to the top
+payload = {"dir": 1, "id": "d16y4ry"} #"dir": 1 indicates upvote; -1 would be a down vote
+headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+response = requests.post("https://oauth.reddit.com/api/vote", json=payload, headers=headers)
+status = response.status_code
