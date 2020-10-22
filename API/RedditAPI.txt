@@ -1,5 +1,5 @@
 # Access data with authorization key
-headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+#headers = {"Authorization": } - deleted this for  GitHub
 
 # Define parameters to only extract data from the past day
 params = {"t":"day"}
@@ -23,7 +23,7 @@ for article in python_top_articles:
         most_upvotes = ar["ups"]
 
 # Retreive all the comments on the top post - ID for the top post: 4b7w9u
-headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+#headers = {"Authorization": } #Deleted for GitHub
 response = requests.get("https://oauth.reddit.com/r/python/comments/4b7w9u", headers=headers)
 
 comments = response.json()
@@ -46,6 +46,6 @@ for comment in comments_list:
 
 # Give another upvote to the top
 payload = {"dir": 1, "id": "d16y4ry"} #"dir": 1 indicates upvote; -1 would be a down vote
-headers = {"Authorization": "bearer 13426216-4U1ckno9J5AiK72VRbpEeBaMSKk", "User-Agent": "Dataquest/1.0"}
+headers = {"Authorization": } #Deleted for GitHub
 response = requests.post("https://oauth.reddit.com/api/vote", json=payload, headers=headers)
 status = response.status_code
